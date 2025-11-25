@@ -1,14 +1,14 @@
-﻿using MediatR;
+﻿using Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace Ardalis.SharedKernel;
 
-public class MediatRDomainEventDispatcher : IDomainEventDispatcher
+public class MediatorDomainEventDispatcher : IDomainEventDispatcher
 {
   private readonly IMediator _mediator;
-  private readonly ILogger<MediatRDomainEventDispatcher> _logger;
+  private readonly ILogger<MediatorDomainEventDispatcher> _logger;
 
-  public MediatRDomainEventDispatcher(IMediator mediator, ILogger<MediatRDomainEventDispatcher> logger)
+  public MediatorDomainEventDispatcher(IMediator mediator, ILogger<MediatorDomainEventDispatcher> logger)
   {
     _mediator = mediator;
     _logger = logger;
@@ -18,12 +18,12 @@ public class MediatRDomainEventDispatcher : IDomainEventDispatcher
   {
     foreach (IHasDomainEvents entity in entitiesWithEvents)
     {
-      if (entity is HasDomainEventsBase hasDomainEvents)
+      if (entity is IHasDomainEvents hasDomainEvents)
       {
-        DomainEventBase[] events = hasDomainEvents.DomainEvents.ToArray();
+        IDomainEvent[] events = hasDomainEvents.DomainEvents.ToArray();
         hasDomainEvents.ClearDomainEvents();
 
-        foreach (DomainEventBase domainEvent in events)
+        foreach (var domainEvent in events)
           await _mediator.Publish(domainEvent).ConfigureAwait(false);
       }
       else
@@ -31,7 +31,7 @@ public class MediatRDomainEventDispatcher : IDomainEventDispatcher
         _logger.LogError(
           "Entity of type {EntityType} does not inherit from {BaseType}. Unable to clear domain events.",
           entity.GetType().Name,
-          nameof(HasDomainEventsBase));
+          nameof(IHasDomainEvents));
       }
     }
   }
